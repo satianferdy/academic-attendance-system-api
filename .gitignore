@@ -1,0 +1,43 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*__pycache__*
+
+# Virtual environment
+venv/
+ENV/
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage_html_report/
+
+# Environment variables
+.env
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local development settings
+*.log
+*.sqlite3
+*.db
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Testing
+.pytest_cache/
+
+# Machine learning models
+*.h5
+*.pkl
+*.model
+models/facenet_keras.h5

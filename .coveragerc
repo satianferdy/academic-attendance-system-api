@@ -1,0 +1,34 @@
+[run]
+source = app
+omit =
+    */tests/*
+    */migrations/*
+    */venv/*
+    */env/*
+    */__init__.py
+    */config.py
+
+[report]
+# Show which lines are missing coverage
+show_missing = true
+
+# Exclude lines from coverage consideration
+exclude_lines =
+    # Don't count debug-only code
+    pragma: no cover
+    # Don't count empty __init__ files
+    def __repr__
+    # Don't count exception blocks
+    raise NotImplementedError
+    except ImportError
+
+# Set coverage precision
+precision = 2
+
+[html]
+# Directory for HTML output
+directory = coverage_html_report
+
+[xml]
+# File name for XML output
+output = coverage.xml

@@ -1,0 +1,16 @@
+Flask==2.0.3
+Flask-Cors==3.0.10
+Flask-RESTful==0.3.9
+SQLAlchemy==1.4.46
+pymysql==1.0.2
+cryptography==39.0.1
+tensorflow==2.10.0
+keras==2.10.0
+mtcnn==0.1.1
+numpy==1.21.6
+Pillow==9.4.0
+python-dotenv==0.21.1
+marshmallow==3.19.0
+pytest==7.0.1
+python-multipart==0.0.6
+dependency-injector==4.41.0
