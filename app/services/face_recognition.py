@@ -1,23 +1,31 @@
 import os
 import numpy as np
+import cv2
+import io
+import base64
 from datetime import datetime
 import uuid
 from PIL import Image
 from app.core.exceptions import (
     FaceRecognitionException, FaceVerificationError, 
-    StudentNotFoundError, FaceNotRegisteredError, DatabaseError
+    StudentNotFoundError, FaceNotRegisteredError, DatabaseError,
+    NoFaceDetectedError, MultipleFacesError, FaceDetectionError
 )
 
 class FaceRecognitionServiceInterface:
     """Interface for face recognition services."""
     
-    def register_face(self, image_data, nim):
-
-        raise NotImplementedError("Subclasses must implement register_face")
-    
     def verify_face(self, image_data, class_id, nim):
-
+        """Verify face against stored embeddings"""
         raise NotImplementedError("Subclasses must implement verify_face")
+        
+    def process_face(self, image_data, nim):
+        """Process face image and extract features"""
+        raise NotImplementedError("Subclasses must implement process_face")
+        
+    def validate_quality(self, image_data):
+        """Validate face image quality and return embedding"""
+        raise NotImplementedError("Subclasses must implement validate_quality")
 
 class FaceRecognitionService(FaceRecognitionServiceInterface):
     """Implementation of face recognition service."""
@@ -28,26 +36,8 @@ class FaceRecognitionService(FaceRecognitionServiceInterface):
         self.face_embedder = face_embedder
         self.recognition_threshold = recognition_threshold
         self.db = db
-        self._ensure_upload_dir()
-    
-    def _ensure_upload_dir(self):
-        """Ensure that the upload directory exists."""
-        os.makedirs('storage/faces', exist_ok=True)
     
     def _get_student_by_nim(self, session, nim):
-        """
-        Get a student by NIM.
-        
-        Args:
-            session: Database session
-            nim: Student identification number
-            
-        Returns:
-            Student: Student object
-            
-        Raises:
-            StudentNotFoundError: If student is not found
-        """
         from app.models.database import Student
         
         student = session.query(Student).filter(Student.nim == nim).first()
@@ -55,37 +45,8 @@ class FaceRecognitionService(FaceRecognitionServiceInterface):
             raise StudentNotFoundError(f"Student with NIM {nim} not found")
         return student
     
-    def _save_image(self, image, student_id):
-        """
-        Save a face image to the filesystem.
-        
-        Args:
-            image: PIL Image object
-            student_id: Student ID
-            
-        Returns:
-            str: Path to the saved image
-        """
-        # Generate a unique filename
-        filename = f"{student_id}_{uuid.uuid4()}.jpg"
-        filepath = os.path.join('storage/faces', filename)
-        
-        # Save the image
-        image.save(filepath, 'JPEG')
-        
-        return filepath
     
     def _compare_embeddings(self, embedding1, embedding2):
-        """
-        Compare two face embeddings.
-        
-        Args:
-            embedding1: First face embedding
-            embedding2: Second face embedding
-            
-        Returns:
-            float: Similarity score (higher = more similar)
-        """
         # Calculate Euclidean distance
         distance = np.linalg.norm(embedding1 - embedding2)
         
@@ -95,69 +56,114 @@ class FaceRecognitionService(FaceRecognitionServiceInterface):
         
         return similarity
     
-    def register_face(self, image_data, nim):
+    def _calculate_blur_score(self, face_image):
 
-        session = self.db.get_session()
+        gray = cv2.cvtColor(np.array(face_image), cv2.COLOR_RGB2GRAY)
+        return float(cv2.Laplacian(gray, cv2.CV_64F).var())
+    
+    def _face_to_base64(self, face_image, quality=90):
+
+        img_byte_arr = io.BytesIO()
+        face_image.save(img_byte_arr, format='JPEG', quality=quality)
+        return base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
+    
+    def process_face(self, image_data, nim):
+
         try:
-            # Get student
-            student = self._get_student_by_nim(session, nim)
-            
             # Detect face
             face_image, face_box = self.face_detector.detect_face(image_data)
             
-            # Generate face embedding
+            # Extract embedding
             embedding = self.face_embedder.get_embedding(face_image)
+            embedding = embedding / np.linalg.norm(embedding)
             
-            # Save face image
-            image_path = self._save_image(face_image, student.id)
+            # Calculate blur score
+            blur_score = self._calculate_blur_score(face_image)
             
-            # Check if student already has face data
-            from app.models.database import FaceData
+            # Check blur threshold
+            if blur_score < 10:
+                return {
+                    'status': 'error',
+                    'code': 'LOW_QUALITY_IMAGE',
+                    'message': 'Image is too blurry',
+                    'blur_score': blur_score
+                }
+                
+            # Convert face image to base64
+            base64_image = self._face_to_base64(face_image)
             
-            face_data = session.query(FaceData).filter(FaceData.student_id == student.id).first()
-            
-            if face_data:
-                # Update existing face data
-                face_data.set_embedding_array(embedding)
-                face_data.image_path = image_path
-                face_data.is_active = True
-            else:
-                # Create new face data
-                face_data = FaceData(
-                    student_id=student.id,
-                    image_path=image_path,
-                    is_active=True
-                )
-                face_data.set_embedding_array(embedding)
-                session.add(face_data)
-            
-            # Update student face registration status
-            student.face_registered = True
-            
-            # Commit changes
-            session.commit()
-            
+            # Return successful response
             return {
                 'status': 'success',
-                'message': 'Face registered successfully',
-                'student_id': student.id,
-                'nim': student.nim
+                'data': {
+                    'nim': nim,
+                    'embedding': embedding.tolist(),
+                    'face_image': base64_image,
+                    'face_box': {
+                        'x': int(face_box[0]),
+                        'y': int(face_box[1]),
+                        'width': int(face_box[2]),
+                        'height': int(face_box[3])
+                    },
+                    'image_info': {
+                        'format': 'JPEG',
+                        'size': len(base64_image)
+                    },
+                    'quality_metrics': {
+                        'blur_score': blur_score
+                    }
+                }
             }
             
-        except FaceRecognitionException as e:
-            session.rollback()
+        except (NoFaceDetectedError, MultipleFacesError, FaceDetectionError) as e:
             return {
                 'status': 'error',
+                'code': e.__class__.__name__,
                 'message': str(e)
             }
         except Exception as e:
-            session.rollback()
             return {
                 'status': 'error',
-                'message': f"Failed to register face: {str(e)}"
+                'code': 'PROCESSING_ERROR',
+                'message': f"Failed to process face: {str(e)}"
             }
-        finally:
-            session.close()
+    
+    def validate_quality(self, image_data):
+     
+        try:
+            # Detect face
+            face_image, _ = self.face_detector.detect_face(image_data)
+            
+            # Extract embedding
+            embedding = self.face_embedder.get_embedding(face_image)
+            embedding = embedding / np.linalg.norm(embedding)
+            
+            # Calculate blur score
+            blur_score = self._calculate_blur_score(face_image)
+            
+            # Return successful response
+            return {
+                'status': 'success',
+                'data': {
+                    'embedding': embedding.tolist(),
+                    'quality_metrics': {
+                        'blur_score': blur_score
+                    }
+                }
+            }
+            
+        except (NoFaceDetectedError, MultipleFacesError, FaceDetectionError) as e:
+            return {
+                'status': 'error',
+                'code': e.__class__.__name__,
+                'message': str(e)
+            }
+        except Exception as e:
+            return {
+                'status': 'error',
+                'code': 'QUALITY_VALIDATION_ERROR',
+                'message': f"Failed to validate image quality: {str(e)}"
+            }
     
     def verify_face(self, image_data, class_id, nim):
 
