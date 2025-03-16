@@ -81,7 +81,7 @@ class FaceRecognitionService(FaceRecognitionServiceInterface):
             blur_score = self._calculate_blur_score(face_image)
             
             # Check blur threshold
-            if blur_score < 10:
+            if blur_score < 20:
                 return {
                     'status': 'error',
                     'code': 'LOW_QUALITY_IMAGE',
@@ -145,7 +145,7 @@ class FaceRecognitionService(FaceRecognitionServiceInterface):
             return {
                 'status': 'success',
                 'data': {
-                    'embedding': embedding.tolist(),
+                    # 'embedding': embedding.tolist(),
                     'quality_metrics': {
                         'blur_score': blur_score
                     }
