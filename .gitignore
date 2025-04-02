@@ -36,8 +36,9 @@ build/
 # Testing
 .pytest_cache/
 
-# Machine learning models
-*.h5
+# Machine learning models (Tracked by Git LFS)
 *.pkl
 *.model
-models/facenet_keras.h5
+
+# Ignore all files in storage/faces
+storage/faces/
