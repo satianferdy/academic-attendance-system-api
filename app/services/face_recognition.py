@@ -166,7 +166,7 @@ class FaceRecognitionService(FaceRecognitionServiceInterface):
             }
     
     def verify_face(self, image_data, class_id, nim):
-
+        """Verify a student's face against the stored embedding."""
         session = self.db.get_session()
         try:
             # Get student
@@ -189,7 +189,17 @@ class FaceRecognitionService(FaceRecognitionServiceInterface):
             
             # Check if student is enrolled in the class
             class_schedule = session.get(ClassSchedule, class_id)
-            if not class_schedule or class_schedule.classroom_id != student.classroom_id:
+            
+            # We need to modify the enrollment check to reflect the new database structure
+            # Instead of directly comparing classroom_id, we need to check that the student
+            # is enrolled in the same classroom as the class schedule
+            if not class_schedule:
+                return {
+                    'status': 'error',
+                    'message': f"Class schedule with ID {class_id} not found"
+                }
+                
+            if class_schedule.classroom_id != student.classroom_id:
                 return {
                     'status': 'error',
                     'message': f"Student with NIM {nim} is not enrolled in this class"
