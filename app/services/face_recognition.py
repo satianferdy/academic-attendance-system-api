@@ -11,21 +11,7 @@ from app.core.exceptions import (
     StudentNotFoundError, FaceNotRegisteredError, DatabaseError,
     NoFaceDetectedError, MultipleFacesError, FaceDetectionError
 )
-
-class FaceRecognitionServiceInterface:
-    """Interface for face recognition services."""
-    
-    def verify_face(self, image_data, class_id, nim):
-        """Verify face against stored embeddings"""
-        raise NotImplementedError("Subclasses must implement verify_face")
-        
-    def process_face(self, image_data, nim):
-        """Process face image and extract features"""
-        raise NotImplementedError("Subclasses must implement process_face")
-        
-    def validate_quality(self, image_data):
-        """Validate face image quality and return embedding"""
-        raise NotImplementedError("Subclasses must implement validate_quality")
+from app.services.interfaces import FaceRecognitionServiceInterface
 
 class FaceRecognitionService(FaceRecognitionServiceInterface):
     """Implementation of face recognition service."""

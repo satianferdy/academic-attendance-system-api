@@ -6,7 +6,7 @@ from app.models.database import Database
 from app.config import Config
 
 class Container(containers.DeclarativeContainer):
-    """Dependency injection container."""
+    """Enhanced dependency injection container."""
     
     config = providers.Singleton(Config)
     
@@ -15,12 +15,13 @@ class Container(containers.DeclarativeContainer):
         db_uri=config.provided.SQLALCHEMY_DATABASE_URI
     )
     
-    face_detector = providers.Singleton(
+    # Factory providers untuk dynamic creation
+    face_detector = providers.Factory(
         MTCNNFaceDetector,
         min_confidence=config.provided.FACE_DETECTION_CONFIDENCE
     )
     
-    face_embedder = providers.Singleton(
+    face_embedder = providers.Factory(
         FaceNetEmbedding,
         model_path=config.provided.FACE_RECOGNITION_MODEL_PATH,
         image_size=config.provided.FACE_IMAGE_SIZE
@@ -33,3 +34,7 @@ class Container(containers.DeclarativeContainer):
         recognition_threshold=config.provided.FACE_RECOGNITION_THRESHOLD,
         db=db
     )
+
+class TestContainer(Container):
+    """Test-specific container with mocked dependencies."""
+    pass

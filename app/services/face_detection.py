@@ -3,12 +3,13 @@ from mtcnn import MTCNN
 from PIL import Image
 import io
 from app.core.exceptions import FaceDetectionError, MultipleFacesError, NoFaceDetectedError
+from app.services.interfaces import FaceDetectorInterface
 
-class FaceDetectorInterface:
-    """Interface for face detection services."""
+# class FaceDetectorInterface:
+#     """Interface for face detection services."""
     
-    def detect_face(self, image_data):
-        raise NotImplementedError("Subclasses must implement detect_face")
+#     def detect_face(self, image_data):
+#         raise NotImplementedError("Subclasses must implement detect_face")
 
 class MTCNNFaceDetector(FaceDetectorInterface):
     """MTCNN-based face detector implementation."""

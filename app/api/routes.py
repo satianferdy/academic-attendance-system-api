@@ -4,6 +4,7 @@ from app.api.validators import validate_process_face_request, validate_verify_fa
 from dependency_injector.wiring import inject, Provide
 from app.core.dependencies import Container
 from app.services.face_recognition import FaceRecognitionService
+from app.services.interfaces import FaceRecognitionServiceInterface
 import logging
 
 api_blueprint = Blueprint('api', __name__)
@@ -20,7 +21,9 @@ def health_check():
 @api_blueprint.route('/process-face', methods=['POST'])
 @validate_api_key
 @inject
-def process_face(face_recognition_service: FaceRecognitionService = Provide[Container.face_recognition_service]):
+def process_face(
+        face_recognition_service: FaceRecognitionServiceInterface = Provide[Container.face_recognition_service]
+):
     """
     Process a face image and return facial embedding and quality metrics.
     """
@@ -48,7 +51,9 @@ def process_face(face_recognition_service: FaceRecognitionService = Provide[Cont
 @api_blueprint.route('/verify-face', methods=['POST'])
 @validate_api_key
 @inject
-def verify_face(face_recognition_service: FaceRecognitionService = Provide[Container.face_recognition_service]):
+def verify_face(
+    face_recognition_service: FaceRecognitionServiceInterface = Provide[Container.face_recognition_service]
+):    
     """
     Verify a face for attendance.
     """
@@ -77,7 +82,9 @@ def verify_face(face_recognition_service: FaceRecognitionService = Provide[Conta
 @api_blueprint.route('/validate-quality', methods=['POST'])
 @validate_api_key
 @inject
-def validate_quality(face_recognition_service: FaceRecognitionService = Provide[Container.face_recognition_service]):
+def validate_quality(
+    face_recognition_service: FaceRecognitionServiceInterface = Provide[Container.face_recognition_service]
+):    
     """
     Validate face image quality and return embedding.
     """

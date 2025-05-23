@@ -2,12 +2,13 @@ import numpy as np
 import tensorflow as tf
 from PIL import Image
 from app.core.exceptions import FaceEmbeddingError
+from app.services.interfaces import FaceEmbedderInterface
 
-class FaceEmbedderInterface:
-    """Interface for face embedding services."""
+# class FaceEmbedderInterface:
+#     """Interface for face embedding services."""
     
-    def get_embedding(self, face_image):
-        raise NotImplementedError("Subclasses must implement get_embedding")
+#     def get_embedding(self, face_image):
+#         raise NotImplementedError("Subclasses must implement get_embedding")
 
 class FaceNetEmbedding(FaceEmbedderInterface):
     """FaceNet-based face embedding implementation."""
