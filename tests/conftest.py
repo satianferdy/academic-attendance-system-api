@@ -72,6 +72,69 @@ def sample_image():
     img_byte_arr.seek(0)
     return img_byte_arr
 
+@pytest.fixture
+def mock_face_recognition_service():
+    """Create a mock face recognition service with default responses."""
+    service = MagicMock()
+    
+    # Default successful responses
+    service.process_face.return_value = {
+        'status': 'success',
+        'data': {
+            'nim': '12345',
+            'embedding': [0.1] * 128,
+            'face_image': 'base64_encoded_image',
+            'face_box': {'x': 0, 'y': 0, 'width': 100, 'height': 100},
+            'image_info': {'format': 'JPEG', 'size': 1000},
+            'quality_metrics': {'blur_score': 50.0}
+        }
+    }
+    
+    service.verify_face.return_value = {
+        'status': 'success',
+        'message': 'Face verified successfully',
+        'student_id': 1,
+        'nim': '12345',
+        'similarity': 0.9
+    }
+    
+    service.validate_quality.return_value = {
+        'status': 'success',
+        'data': {
+            'quality_metrics': {'blur_score': 75.0}
+        }
+    }
+    
+    return service
+
+@pytest.fixture
+def mock_face_embedding_service(test_config):
+    """Create mock face embedding service following established patterns."""
+    service = MagicMock()
+    
+    # Default successful responses
+    service.get_embedding.return_value = np.random.randn(128)
+    service.preprocess_image.return_value = np.zeros((1, 160, 160, 3), dtype=np.float32)
+    service.model = MagicMock()
+    service.image_size = test_config.FACE_IMAGE_SIZE
+    
+    return service
+
+@pytest.fixture
+def mock_face_detection_service(test_config):
+    """Create mock face detection service following established patterns."""
+    service = MagicMock()
+    
+    # Default successful response
+    service.detect_face.return_value = (
+        Image.new('RGB', (160, 160)), 
+        [0, 0, 100, 100]
+    )
+    service.min_confidence = test_config.FACE_DETECTION_CONFIDENCE
+    service.detector = MagicMock()
+    
+    return service
+
 @pytest.fixture(autouse=True)
 def cleanup_upload_folder(test_config):
     yield
