@@ -1,0 +1,32 @@
+# PRODUCTION REQUIREMENTS - Face Recognition System
+# Core Flask Dependencies
+Flask==2.0.3
+Flask-Cors==3.0.10
+Werkzeug==2.2.3
+
+# Database
+SQLAlchemy==1.4.46
+PyMySQL==1.0.2
+
+# AI/ML Core Libraries
+tensorflow==2.10.0
+mtcnn==0.1.1
+Pillow==9.4.0
+opencv-python==4.11.0.86
+numpy==1.21.6
+
+# Input Validation
+marshmallow==3.19.0
+
+# Configuration Management
+python-dotenv==0.21.1
+
+# Dependency Injection
+dependency-injector==4.41.0
+
+# Production Server (choose one)
+gunicorn==20.1.0
+# waitress==2.1.2   # for Windows deployment
+
+# Optional: Monitoring (uncomment if needed)
+# psutil==5.9.6
